@@ -343,6 +343,16 @@ printf '%s\r\n' "$fvplug" > "$fvmark"
 check "vision plugin marker with CRLF" "foreman-vision: UI not built - run npm run build in $fvplug" "$(vis start)"
 printf '%s\n' "$fvrepo" > "$fvmark" # no hook/fv-hook.sh there
 check "vision plugin marker without fv-hook.sh" $'not installed\nexit 2' "$(vis status; echo "exit $?")"
+# start must not hold the caller's stdout: a stand-in node sleeps 30 s, curl
+# and sleep are no-ops so the wait loop ends at once; `start | cat` must return.
+printf '%s\n' "$fvplug" > "$fvmark"; mkdir -p "$fvplug/web/dist" "$CLAUDE_CONFIG_DIR/bin"; : > "$fvplug/web/dist/index.html"
+printf '#!/usr/bin/env bash\necho $$ > "%s"\nexec sleep 30\n' "$CLAUDE_CONFIG_DIR/node.pid" > "$CLAUDE_CONFIG_DIR/bin/node"
+chmod +x "$CLAUDE_CONFIG_DIR/bin/node"
+fvt=$( ( curl() { :; }; sleep() { :; }; export -f curl sleep; PATH="$CLAUDE_CONFIG_DIR/bin:$PATH"
+  SECONDS=0; vis start | cat >/dev/null; echo "$SECONDS" ) )
+check "vision start detaches from the caller's stdout" "yes" "$([ "$fvt" -lt 10 ] && echo yes || echo "no (${fvt}s)")"
+for _ in $(seq 1 20); do [ -s "$CLAUDE_CONFIG_DIR/node.pid" ] && break; sleep 0.1; done
+kill "$(cat "$CLAUDE_CONFIG_DIR/node.pid" 2>/dev/null)" 2>/dev/null
 
 # Behaviour rules: each phrase must stay in SKILL.md or a reference, so moving
 # a section into references/ keeps them; lines are joined so rewrapping is fine.

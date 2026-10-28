@@ -47,7 +47,8 @@ case "${1:-status}" in
     if up; then echo "$url"; exit 0; fi
     [ -f "$repo/web/dist/index.html" ] || { echo "foreman-vision: UI not built - run npm run build in $repo" >&2; exit 1; }
     mkdir -p "$(dirname "$log")"
-    (cd "$repo" && node src/cli.ts serve --port "$port" </dev/null >"$log" 2>&1 &)
+    # redirect the whole backgrounded list: a subshell holding the caller's stdout would keep `start | cat` open
+    (cd "$repo" && exec node src/cli.ts serve --port "$port") </dev/null >"$log" 2>&1 &
     for _ in $(seq 1 40); do up && { echo "$url"; exit 0; }; sleep 0.25; done
     echo "foreman-vision: did not start on port $port; log $log:" >&2; tail -n5 "$log" >&2; exit 1
     ;;
