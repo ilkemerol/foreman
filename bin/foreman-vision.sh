@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Starts and stops the foreman-vision web view for the master session.
 # The repo is found from its installed hook (<repo>/hook/fv-hook.sh) in
-# settings.json, which is only read. The port comes from foreman-vision.conf
+# settings.json, which is only read; else from the root the foreman-vision
+# plugin writes to foreman-vision/plugin-root, if <root>/hook/fv-hook.sh
+# exists. The port comes from foreman-vision.conf
 # (port=N), default 4780 - the same lookup foreman-vision itself does.
 #
 #   status   "not installed" (exit 2) | "stopped" (exit 1) | "running <url>" (exit 0)
@@ -23,6 +25,10 @@ url="http://127.0.0.1:$port/${sid:+?session=$sid}"
 
 repo=$(jq -r '.. | strings | select(test("fv-hook\\.sh"))' "$cfg/settings.json" 2>/dev/null | tr -d '\r' |
   sed -n 's#^.*"\(.*\)/hook/fv-hook\.sh".*$#\1#p' | head -n1)
+[ -n "$repo" ] || { # plugin install: no hook in settings.json, the plugin writes its root here
+  repo=$(head -n1 "$cfg/foreman-vision/plugin-root" 2>/dev/null | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+  [ -f "$repo/hook/fv-hook.sh" ] || repo=
+}
 up() { curl -s --max-time 1 "http://127.0.0.1:$port/" 2>/dev/null | grep -q 'foreman-vision'; }
 listener() { # pid of the process listening on the port
   if command -v lsof >/dev/null; then

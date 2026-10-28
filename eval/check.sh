@@ -330,6 +330,19 @@ check "vision show" "foreman-vision: floor show ok" "$(fvis '' show)"
 check "vision hide without session id" $'foreman-vision: hide failed (no session id)\nexit 1' "$(sid='' fvis '' hide; echo "exit $?")"
 check "vision show on 404" $'foreman-vision: show failed (HTTP 404)\nexit 1' "$(sid=old fvis '' show; echo "exit $?")"
 check "vision hide on 404" $'foreman-vision: hide failed (HTTP 404)\nexit 1' "$(sid=old fvis '' hide; echo "exit $?")"
+# Plugin install: the root comes from foreman-vision/plugin-root when
+# settings.json has no fv-hook.sh; the "UI not built" line names the repo used.
+fvplug="$CLAUDE_CONFIG_DIR/fv plugin"; fvmark="$CLAUDE_CONFIG_DIR/foreman-vision/plugin-root"
+mkdir -p "$fvplug/hook" "$CLAUDE_CONFIG_DIR/foreman-vision"; : > "$fvplug/hook/fv-hook.sh"
+printf '%s\n' "$fvplug" > "$fvmark"
+check "vision settings hook wins over the plugin marker" "foreman-vision: UI not built - run npm run build in $fvrepo" "$(vis start)"
+printf '{"hooks":{}}' > "$CLAUDE_CONFIG_DIR/settings.json"
+check "vision repo from the plugin marker" "foreman-vision: UI not built - run npm run build in $fvplug" "$(vis start)"
+check "vision stopped via the plugin marker" "stopped" "$(vis status)"
+printf '%s\r\n' "$fvplug" > "$fvmark"
+check "vision plugin marker with CRLF" "foreman-vision: UI not built - run npm run build in $fvplug" "$(vis start)"
+printf '%s\n' "$fvrepo" > "$fvmark" # no hook/fv-hook.sh there
+check "vision plugin marker without fv-hook.sh" $'not installed\nexit 2' "$(vis status; echo "exit $?")"
 
 # Behaviour rules: each phrase must stay in SKILL.md or a reference, so moving
 # a section into references/ keeps them; lines are joined so rewrapping is fine.

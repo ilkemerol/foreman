@@ -206,7 +206,7 @@ Tell the user:
 - Restart Claude Code. For the plugin, `/reload-plugins` also loads it in a running session, but the status line copy is made when a session starts.
 - Turn foreman on with `/foreman on`, run one task with `/foreman <task>`, check the board with `/foreman status`. If another skill named `foreman` takes `/foreman`, the plugin answers to `/foreman:foreman`. Claude never starts foreman on its own.
 - Update later. Plugin: `claude plugin update foreman@foreman`, then `/reload-plugins` or a restart. Third-party marketplaces do not update on their own by default; the user can turn that on under `/plugin` > Marketplaces. Repo clone: `git -C ~/.claude/skills/foreman pull --ff-only`, then restart.
-- Optional extras, both described in the README: [foreman-vision](README.md#foreman-vision), a live view, and [beads](README.md#tracking-with-beads) tracking. foreman offers to install `bd` when it needs it.
+- Optional extras, both described in the README: [foreman-vision](README.md#foreman-vision), a live view (a clone install or its plugin, both are found), and [beads](README.md#tracking-with-beads) tracking. foreman offers to install `bd` when it needs it.
 
 ## Uninstall
 

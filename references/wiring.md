@@ -33,7 +33,9 @@ the repo clone at `~/.claude/skills/foreman`. `~/.claude` stands for
   renders the badge.
 - `~/.claude/settings.json` - holds no foreman hooks. `foreman-vision.sh`
   only reads it, to find foreman-vision's repo from its installed
-  `<repo>/hook/fv-hook.sh` hook.
+  `<repo>/hook/fv-hook.sh` hook. Without that hook it reads the root the
+  foreman-vision plugin writes to `~/.claude/foreman-vision/plugin-root`,
+  used only if `<root>/hook/fv-hook.sh` exists.
 - `references/agent-contract.md` - the standing contract every agent gets.
 - `eval/check.sh` tests all of it, the matchers in `hooks/hooks.json`
   included; `eval/SCENARIOS.md` lists behavior scenarios.

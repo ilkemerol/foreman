@@ -29,7 +29,7 @@ You turn it on with `/foreman on` for the whole session, or run a single task or
 - **Status line badge** - `[FOREMAN:ON]`, `[FOREMAN:TASK]` or `[FOREMAN:OFF]` with the board's counts.
 - **Runs other skills** - `/foreman <skill> <args>` runs a skill with its work going to agents while its user gates and git steps stay with the main session.
 - **Survives compaction** - the mode lives in a per-session flag; after a compaction or resume a hook tells the session to re-read the skill and reconcile the board.
-- **Live view** - optional [foreman-vision](https://github.com/ilkemerol/foreman-vision) shows each foreman session as a floor of a pixel-art office.
+- **Live view** - optional [foreman-vision](https://github.com/ilkemerol/foreman-vision-pub) shows each foreman session as a floor of a pixel-art office.
 - **Optional tracking** - work that spans sessions can be tracked with [beads](https://github.com/gastownhall/beads) (`bd`).
 
 ## Quick Start
@@ -199,14 +199,14 @@ They are listed in [hooks/hooks.json](hooks/hooks.json), which Claude Code loads
 
 ## foreman-vision
 
-[foreman-vision](https://github.com/ilkemerol/foreman-vision) is a live view in the browser. Every Claude Code session becomes a floor of a small office building; each subagent walks to a desk, waits in the waiting room when it needs you, and heads to the Done lounge when it finishes. With foreman on, the floor also shows the board's jobs, notes and stages.
+[foreman-vision](https://github.com/ilkemerol/foreman-vision-pub) is a live view in the browser. Every Claude Code session becomes a floor of a small office building; each subagent walks to a desk, waits in the waiting room when it needs you, and heads to the Done lounge when it finishes. With foreman on, the floor also shows the board's jobs, notes and stages.
 
 foreman starts and stops it for you at two moments, through [bin/foreman-vision.sh](bin/foreman-vision.sh):
 
 - **Mode turns on** - if foreman-vision is installed but stopped, foreman asks whether to start it, then gives you the URL. If it is already running, you just get the URL.
 - **Mode turns off** - if no other foreman session uses it, foreman asks whether to stop it; otherwise it only offers to hide this session's floor.
 
-If foreman-vision is not installed, foreman says nothing about it.
+foreman finds foreman-vision either way it is installed: a clone wired through hooks in `~/.claude/settings.json`, or the foreman-vision plugin. If foreman-vision is not installed, foreman says nothing about it.
 
 ## Tracking with beads
 
