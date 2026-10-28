@@ -1,0 +1,12 @@
+{
+  "name": "foreman",
+  "owner": { "name": "İlkem Erol" },
+  "description": "foreman: orchestrator mode for Claude Code.",
+  "plugins": [
+    {
+      "name": "foreman",
+      "source": "./",
+      "description": "Orchestrator mode for Claude Code: the main session plans and delegates the work to subagents instead of doing it inline."
+    }
+  ]
+}

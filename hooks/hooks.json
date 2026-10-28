@@ -1,0 +1,34 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh\"", "timeout": 5 }] }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task|SendMessage|Workflow|CronCreate|RemoteTrigger|EnterWorktree|Skill|Monitor",
+        "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/nested-agent-guard.sh\"", "timeout": 5 }]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/master-edit-guard.sh\"", "timeout": 5 }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/board-sync.sh\"", "timeout": 5 }]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/board-sync.sh\"", "timeout": 5 },
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/subagent-contract.sh\"", "timeout": 5 }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      { "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/board-sync.sh\"", "timeout": 5 }] }
+    ]
+  }
+}

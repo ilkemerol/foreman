@@ -1,0 +1,9 @@
+{
+  "name": "foreman",
+  "description": "Orchestrator mode for Claude Code: the main session plans and delegates the work to subagents instead of doing it inline.",
+  "author": { "name": "İlkem Erol" },
+  "license": "MIT",
+  "homepage": "https://github.com/ilkemerol/foreman",
+  "repository": "https://github.com/ilkemerol/foreman",
+  "keywords": ["orchestration", "subagents", "delegation", "statusline", "hooks"]
+}
