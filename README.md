@@ -238,6 +238,10 @@ bash eval/check.sh
 - [eval/](eval/) - `check.sh` and `SCENARIOS.md`.
 - [assets/](assets/) - the README pictures, `foreman.svg` and `badges.svg`, and the stdlib Python scripts that draw them (`banner.py`, `badges.py`).
 
+## Contributing
+
+Bug reports and ideas are welcome in the [issue tracker](https://github.com/ilkemerol/foreman/issues). Pull requests are open to collaborators only, so GitHub won't let you open one from a fork.
+
 ## License
 
 [MIT](LICENSE)
