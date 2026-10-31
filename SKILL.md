@@ -204,7 +204,13 @@ A `/foreman <skill>` one-shot, or any skill the user runs while the mode is
      every running agent the change affects (SendMessage), marked as a change
      to the User's ask. The row stays `running`; don't spawn a new agent for
      it.
-5. **Report** to the user: the outcome first, anything that failed (with
+5. **Report** to the user. First, if two or more pieces changed files, check
+   them together once the last one has landed, even if each passed alone: a
+   later piece can undo an accepted one and both reports still read clean.
+   Read the task's combined diff, committed or not, confirm every accepted
+   piece's change is still there, and run the project's check once. A piece
+   whose change is gone goes back to an agent. Then report the outcome first,
+   anything that failed (with
    evidence), what you verified and what stays not verified, then open
    decisions - every `needs-decision` and scope-widening follow-up the user
    hasn't answered. Each decision ends with your recommendation and what a yes
