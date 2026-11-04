@@ -292,14 +292,20 @@ flag off
 vis() { CLAUDE_CODE_SESSION_ID=$sid bash "$here/bin/foreman-vision.sh" "$@" 2>&1; }
 fvrepo="$CLAUDE_CONFIG_DIR/fv repo"; mkdir -p "$fvrepo"
 printf '{"hooks":{}}' > "$CLAUDE_CONFIG_DIR/settings.json"
-check "vision without hook" "not installed" "$(vis status)"
+check "vision without hook" $'not installed\nexit 0' "$(vis status; echo "exit $?")"
+check "vision others without hook" $'not installed\nexit 2' "$(vis others; echo "exit $?")"
 jq -n --arg c "bash \"$fvrepo/hook/fv-hook.sh\" \"/x/spool\"" \
   '{hooks: {Stop: [{hooks: [{type: "command", command: $c}]}]}}' > "$CLAUDE_CONFIG_DIR/settings.json"
 printf 'port=1\n' > "$CLAUDE_CONFIG_DIR/foreman-vision.conf" # nothing listens on port 1
-check "vision stopped on a free port" "stopped" "$(vis status)"
+check "vision stopped on a free port" $'stopped\nforeman-vision: stopped (port 1 free)\nexit 0' "$(vis status; echo "exit $?")"
 check "vision url has session" "http://127.0.0.1:1/?session=$sid" "$(vis url)"
 check "vision start needs a built UI" "foreman-vision: UI not built - run npm run build in $fvrepo" "$(vis start)"
+mkdir -p "$CLAUDE_CONFIG_DIR/foreman-vision"; printf '1\n' > "$CLAUDE_CONFIG_DIR/foreman-vision/port"
 check "vision stop when not running" "foreman-vision: not running" "$(vis stop)"
+check "vision stop removes its port file" "gone" "$([ -e "$CLAUDE_CONFIG_DIR/foreman-vision/port" ] && echo kept || echo gone)"
+printf '4780\n' > "$CLAUDE_CONFIG_DIR/foreman-vision/port"; vis stop >/dev/null
+check "vision stop keeps another port's file" "4780" "$(cat "$CLAUDE_CONFIG_DIR/foreman-vision/port")"
+rm -f "$CLAUDE_CONFIG_DIR/foreman-vision/port"
 check "vision others when not running" "0" "$(vis others)"
 check "vision hide when not running" $'foreman-vision: hide failed (no answer)\nexit 1' "$(vis hide; echo "exit $?")"
 check "vision show when not running" $'foreman-vision: show failed (no answer)\nexit 1' "$(vis show; echo "exit $?")"
@@ -338,11 +344,11 @@ printf '%s\n' "$fvplug" > "$fvmark"
 check "vision settings hook wins over the plugin marker" "foreman-vision: UI not built - run npm run build in $fvrepo" "$(vis start)"
 printf '{"hooks":{}}' > "$CLAUDE_CONFIG_DIR/settings.json"
 check "vision repo from the plugin marker" "foreman-vision: UI not built - run npm run build in $fvplug" "$(vis start)"
-check "vision stopped via the plugin marker" "stopped" "$(vis status)"
+check "vision stopped via the plugin marker" $'stopped\nforeman-vision: stopped (port 1 free)' "$(vis status)"
 printf '%s\r\n' "$fvplug" > "$fvmark"
 check "vision plugin marker with CRLF" "foreman-vision: UI not built - run npm run build in $fvplug" "$(vis start)"
 printf '%s\n' "$fvrepo" > "$fvmark" # no hook/fv-hook.sh there
-check "vision plugin marker without fv-hook.sh" $'not installed\nexit 2' "$(vis status; echo "exit $?")"
+check "vision plugin marker without fv-hook.sh" $'not installed\nexit 0' "$(vis status; echo "exit $?")"
 # start must not hold the caller's stdout: a stand-in node sleeps 30 s, curl
 # and sleep are no-ops so the wait loop ends at once; `start | cat` must return.
 printf '%s\n' "$fvplug" > "$fvmark"; mkdir -p "$fvplug/web/dist" "$CLAUDE_CONFIG_DIR/bin"; : > "$fvplug/web/dist/index.html"
@@ -353,10 +359,21 @@ fvt=$( ( curl() { :; }; sleep() { :; }; export -f curl sleep; PATH="$CLAUDE_CONF
 check "vision start detaches from the caller's stdout" "yes" "$([ "$fvt" -lt 10 ] && echo yes || echo "no (${fvt}s)")"
 for _ in $(seq 1 20); do [ -s "$CLAUDE_CONFIG_DIR/node.pid" ] && break; sleep 0.1; done
 kill "$(cat "$CLAUDE_CONFIG_DIR/node.pid" 2>/dev/null)" 2>/dev/null
+# A real listener on a free port that is not foreman-vision: status is a fault
+node -e 'const s=require("http").createServer((q,r)=>r.end("other")).listen(0,"127.0.0.1",()=>console.log(s.address().port))' \
+  > "$CLAUDE_CONFIG_DIR/other.port" &
+other=$!
+for _ in $(seq 1 40); do [ -s "$CLAUDE_CONFIG_DIR/other.port" ] && break; sleep 0.25; done
+oport=$(tr -d '\r\n' < "$CLAUDE_CONFIG_DIR/other.port")
+printf 'port=%s\n' "$oport" > "$CLAUDE_CONFIG_DIR/foreman-vision.conf"
+check "vision status on a port held by another server" \
+  "foreman-vision: port $oport is held by pid N but foreman-vision does not answer"$'\nexit 1' \
+  "$(vis status | sed 's/pid [0-9][0-9]*/pid N/'; echo "exit ${PIPESTATUS[0]}")"
+kill "$other" 2>/dev/null
 
 # Behaviour rules: each phrase must stay in SKILL.md or a reference, so moving
 # a section into references/ keeps them; lines are joined so rewrapping is fine.
-ruletext=$(cat "$here/SKILL.md" "$here"/references/*.md | tr -s '\n\t ' ' ')
+ruletext=$(cat "$here/SKILL.md" "$here"/references/*.md | tr -s '\r\n\t ' ' ')
 has_rule() { # name phrase...; every phrase must appear, each searched literally
   local p miss=
   for p in "${@:2}"; do printf '%s' "$ruletext" | grep -qF -- "$p" || miss="$miss[$p]"; done
@@ -380,6 +397,7 @@ has_rule "TaskStop row" 'no hook fires for a stopped agent'
 has_rule "vision language" "in the conversation's language"
 has_rule "vision hide beside others" 'never offer `stop`' 'On yes run `hide`' 'run `show`'
 has_rule "vision show after start" 'once it succeeds run `show` too' 'unless it prints an error'
+has_rule "vision failed status" 'A failed `status`' 'pass its message on and ask nothing'
 
 # Sections moved out of SKILL.md: the reference exists and SKILL.md points to it
 for r in called-skills one-shot wiring; do

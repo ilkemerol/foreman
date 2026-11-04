@@ -83,7 +83,8 @@ Ask every question and option label below in the conversation's language
     On yes run `hide`.
 
 If `start`, `others`, `hide` or `show` fails, pass its message on (after a
-failed `others`, ask nothing).
+failed `others`, ask nothing). A failed `status` (exit 1: something else holds
+the port) prints no answer; pass its message on and ask nothing.
 
 ## The one rule of coordination
 

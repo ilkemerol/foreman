@@ -6,10 +6,13 @@
 # exists. The port comes from foreman-vision.conf
 # (port=N), default 4780 - the same lookup foreman-vision itself does.
 #
-#   status   "not installed" (exit 2) | "stopped" (exit 1) | "running <url>" (exit 0)
+#   status   "not installed" | "stopped" | "running <url>", all exit 0 (the exit code
+#            says the check worked, not the answer); exit 1 with no stdout and one
+#            error line when the port is held by something that is not foreman-vision
 #   url      print this session's URL: http://127.0.0.1:<port>/?session=<sid>
 #   start    start `node <repo>/src/cli.ts serve` detached unless running; print the URL
-#   stop     end the process listening on the port (with its child processes)
+#   stop     end the process listening on the port (with its child processes) and
+#            remove foreman-vision's port file when it names this port
 #   others   count of OTHER live foreman sessions, then their ids one per line;
 #            0 when the server is not running
 #   hide     hide this session's floor in the view (the server keeps running)
@@ -30,6 +33,8 @@ repo=$(jq -r '.. | strings | select(test("fv-hook\\.sh"))' "$cfg/settings.json" 
   [ -f "$repo/hook/fv-hook.sh" ] || repo=
 }
 up() { curl -s --max-time 1 "http://127.0.0.1:$port/" 2>/dev/null | grep -q 'foreman-vision'; }
+# taskkill /F skips the server's own exit handler, so its answer-hook port file would outlive it
+unport() { f="$cfg/foreman-vision/port"; [ "$(tr -cd '0-9' 2>/dev/null < "$f")" = "$port" ] && rm -f "$f"; }
 listener() { # pid of the process listening on the port
   if command -v lsof >/dev/null; then
     lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | head -n1
@@ -39,9 +44,14 @@ listener() { # pid of the process listening on the port
   fi
 }
 
-[ -n "$repo" ] || { echo "not installed"; exit 2; }
+[ -n "$repo" ] || { echo "not installed"; [ "${1:-status}" = status ] && exit 0; exit 2; }
 case "${1:-status}" in
-  status) if up; then echo "running $url"; else echo stopped; exit 1; fi ;;
+  status)
+    if up; then echo "running $url"
+    elif pid=$(listener); [ -n "$pid" ]; then
+      echo "foreman-vision: port $port is held by pid $pid but foreman-vision does not answer" >&2; exit 1
+    else echo stopped; echo "foreman-vision: stopped (port $port free)" >&2; fi
+    ;;
   url) echo "$url" ;;
   start)
     if up; then echo "$url"; exit 0; fi
@@ -53,12 +63,12 @@ case "${1:-status}" in
     echo "foreman-vision: did not start on port $port; log $log:" >&2; tail -n5 "$log" >&2; exit 1
     ;;
   stop)
-    up || { echo "foreman-vision: not running"; exit 0; }
+    up || { unport; echo "foreman-vision: not running"; exit 0; }
     pid=$(listener)
     [ -n "$pid" ] || { echo "foreman-vision: running but its process was not found - stop it by hand" >&2; exit 1; }
     if command -v taskkill >/dev/null; then taskkill //PID "$pid" //T //F >/dev/null
     else pkill -P "$pid" 2>/dev/null; kill "$pid"; fi
-    for _ in $(seq 1 20); do up || { echo "foreman-vision: stopped"; exit 0; }; sleep 0.25; done
+    for _ in $(seq 1 20); do up || { unport; echo "foreman-vision: stopped"; exit 0; }; sleep 0.25; done
     echo "foreman-vision: pid $pid did not stop" >&2; exit 1
     ;;
   others)
