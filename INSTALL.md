@@ -173,7 +173,7 @@ fi
 - any other value, such as `fresh` - the user may have chosen it. Show it, tell them what `head` changes, and ask the same question. On yes run the block below.
 - `STOP` - tell the user their `settings.json` does not parse. Change nothing.
 
-On no, change nothing. foreman still works, but `/foreman on` warns each time that worktree agents start from `origin/<default-branch>`.
+On no, change nothing. foreman still works, but `/foreman on` asks once per session whether to set it, since worktree agents start from `origin/<default-branch>`.
 
 ```sh
 c="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; s="$c/settings.json"

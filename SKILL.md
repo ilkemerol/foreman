@@ -29,10 +29,15 @@ is already set - skip this table, but re-read `references/one-shot.md` if a
 one-shot is open, `references/called-skills.md` if you are orchestrating a
 called skill, and `references/beads.md` if bd tracks the task.
 
-If `on` or `task` warns that `worktree.baseRef` is not `head`, tell the user
-once per session: worktree agents start from `origin/<default-branch>` and miss
-unpushed commits; `INSTALL.md` step 7 sets it after asking. Change it only when
-they ask.
+If `on` or `task` warns that `worktree.baseRef` is not `head`, ask once per
+session with AskUserQuestion, in the conversation's language and in the same
+call as the foreman-vision question when that one is asked too: "Worktree
+agents start from `origin/<default-branch>` and miss unpushed commits. Set
+`worktree.baseRef` to `head` in your settings.json? It is global: it also
+changes `claude --worktree` and EnterWorktree." - "Yes, set it" / "No". On yes
+follow step 7 of `${CLAUDE_SKILL_DIR}/INSTALL.md`: run its read block first; on
+`head` stop, on `STOP` pass it on and change nothing, otherwise run its write
+block. On no change nothing.
 
 | Arguments | Do this |
 |-----------|---------|
@@ -74,7 +79,8 @@ Ask every question and option label below in the conversation's language
   - `running <url>` - run `show` (an earlier `off` may have hidden this
     session's floor; say nothing about it unless it prints an error), then
     give the user the URL; don't ask.
-  - `stopped` - ask with AskUserQuestion, two options: "Start foreman-vision
+  - `stopped` - ask with AskUserQuestion (one call with the baseRef question
+    above when that one is asked too), two options: "Start foreman-vision
     to visualize this session?" - "Yes, start" / "No". On yes run `start`;
     once it succeeds run `show` too (a hidden floor stays hidden across
     restarts), then give the user the URL `start` printed.

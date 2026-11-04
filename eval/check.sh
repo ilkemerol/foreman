@@ -423,7 +423,7 @@ has_rule "plan-marked parallel" 'Plan-marked parallel tasks run in parallel' 'ea
 has_rule "A2 land reviewed sha" 'land the commit the review passed' 'commits added since get reviewed first'
 has_rule "A3 untracked in combined diff" '`git status --untracked-files=all`'
 has_rule "A4 silent is not gone" 'Silent is not gone' 'in the same isolation (worktree) as the one it replaces'
-has_rule "baseRef warning relay" 'warns that `worktree.baseRef` is not `head`' 'tell the user once per session' 'Change it only when they ask'
+has_rule "baseRef ask" 'warns that `worktree.baseRef` is not `head`, ask once per' 'Set `worktree.baseRef` to `head` in your settings.json?' 'step 7 of `${CLAUDE_SKILL_DIR}/INSTALL.md`' 'on `STOP` pass it on and change nothing' 'On no change nothing'
 has_rule "parallel readiness check" 'Readiness check at every completion' '`Parallel check: held <task> (<why>)`'
 check "SKILL.md step 2 points to called-skills parallel" yes "$(tr -s '\r\n\t ' ' ' < "$here/SKILL.md" | grep -qF "This holds inside a called skill's controller loop too; see references/called-skills.md." && echo yes || echo no)"
 

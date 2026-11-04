@@ -83,7 +83,7 @@ The clone carries the plugin manifest, so Claude Code loads it as the plugin `fo
 
 `claude plugin list` must show `foreman@skills-dir` enabled. Update with `git -C ~/.claude/skills/foreman pull --ff-only`, then restart; never by copying files over the clone. Coming from a version before 2.2.0? Run [INSTALL.md](INSTALL.md) step 7 (worktree base).
 
-**Both methods: worktree base.** foreman runs pieces that change the same file in their own git worktree. Claude Code branches those from `worktree.baseRef`, whose default `fresh` starts from `origin/<default-branch>`: such an agent misses your unpushed commits. Set `"worktree": {"baseRef": "head"}` in `~/.claude/settings.json`; a plugin cannot set it. The setting is global: it also changes `claude --worktree` and EnterWorktree in every project. [INSTALL.md](INSTALL.md) step 7 sets it after asking you; without it, `/foreman on` warns.
+**Both methods: worktree base.** foreman runs pieces that change the same file in their own git worktree. Claude Code branches those from `worktree.baseRef`, whose default `fresh` starts from `origin/<default-branch>`: such an agent misses your unpushed commits. Set `"worktree": {"baseRef": "head"}` in `~/.claude/settings.json`; a plugin cannot set it. The setting is global: it also changes `claude --worktree` and EnterWorktree in every project. [INSTALL.md](INSTALL.md) step 7 sets it after asking you; without it, `/foreman on` asks once per session whether to set it.
 
 [references/wiring.md](references/wiring.md) lists every piece of wiring.
 
