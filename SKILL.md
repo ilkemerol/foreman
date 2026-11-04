@@ -4,7 +4,7 @@ description: Orchestrator mode - the main session plans and delegates the task's
 argument-hint: "on | off | status | <task> | <skill> <args>"
 disable-model-invocation: true
 metadata:
-  version: "2.2.1"
+  version: "2.2.2"
   tags: [orchestration, subagents, delegation, beads, statusline, claude-code]
 ---
 
