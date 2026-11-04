@@ -398,6 +398,9 @@ has_rule "vision language" "in the conversation's language"
 has_rule "vision hide beside others" 'never offer `stop`' 'On yes run `hide`' 'run `show`'
 has_rule "vision show after start" 'once it succeeds run `show` too' 'unless it prints an error'
 has_rule "vision failed status" 'A failed `status`' 'pass its message on and ask nothing'
+has_rule "plan-marked parallel" 'Plan-marked parallel tasks run in parallel' 'each with `isolation: "worktree"`' 'land them one at a time' 'not a BASE..HEAD range'
+has_rule "parallel readiness check" 'Readiness check at every completion' '`Parallel check: held <task> (<why>)`'
+check "SKILL.md step 2 points to called-skills parallel" yes "$(tr -s '\r\n\t ' ' ' < "$here/SKILL.md" | grep -qF "This holds inside a called skill's controller loop too; see references/called-skills.md." && echo yes || echo no)"
 
 # Sections moved out of SKILL.md: the reference exists and SKILL.md points to it
 for r in called-skills one-shot wiring; do

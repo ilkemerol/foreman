@@ -151,6 +151,19 @@ skill. Run each in a fresh session; FAIL conditions are the regressions to catch
 32. **Questions in the session's language.** In a Turkish session (the user
     writes Turkish), the start, stop and hide questions and their option
     labels are in Turkish. FAIL: any of them in English.
+33. **Plan-marked parallel in SDD.** Foreman ON, the user runs
+    `superpowers:subagent-driven-development`; the plan's task map marks two
+    file-disjoint tasks as parallel group B. The master dispatches both
+    implementers in one message, each with `isolation: "worktree"`, reviews
+    each on its own branch range, and lands them one at a time by
+    fast-forward or cherry-pick; the ledger records these rulings. FAIL: the
+    tasks run one by one because SDD says "never dispatch multiple
+    implementation subagents in parallel", they share one tree, or a review
+    reads a mixed BASE..HEAD range.
+34. **Plan-marked parallel sharing a file.** Two plan-marked parallel tasks
+    both change `src/App.tsx`: the master runs them one after the other,
+    and the ledger has `Parallel check: held <task> (shared file App.tsx)`.
+    FAIL: both are dispatched together, or the held task has no ledger line.
 
 ## Verified facts (Claude Code, Windows, 2026-09-11 to 2026-10-26; versions per bullet where known)
 

@@ -19,10 +19,25 @@ order; this skill decides **who** does the work.
   dispatch its implementers and reviewers yourself. Never hand the loop to an
   agent.
 - **Its own rules govern its loops.** Where it defines dispatch templates,
-  statuses, fix/review rounds or parallelism, those apply. *Your job* step 4
+  statuses, fix/review rounds or parallelism (except the next bullet), those
+  apply. *Your job* step 4
   and the contract's return statuses are for pieces you define. Add nothing
   for the standing rules: the contract hook covers its agents too, and defers
   to its own statuses. Map its statuses onto the board: `DONE` /
   `DONE_WITH_CONCERNS` = verifying (the concern as note) until its reviewers
   pass, then done; `NEEDS_CONTEXT` = waiting (needs-info);
   `BLOCKED` = waiting (blocked).
+- **Plan-marked parallel tasks run in parallel.** A called skill's "never run
+  implementers in parallel" guards against file conflicts. When the approved
+  plan marks tasks as parallel (a task map, a parallel group), dispatch the
+  ready ones in one message, each with `isolation: "worktree"`; review each on
+  its own branch range, then land them one at a time (fast-forward or
+  cherry-pick). The same tree is fine only when at most one of them changes
+  tracked code and runs the suite (the others write docs or outside the repo):
+  each commits by explicit paths, and each review reads that task's own commits
+  (`git show <sha>`), not a BASE..HEAD range. Serialize tasks that share a
+  file, an interface still being written, a user gate, or a port, simulator or
+  database. Ledger each such call as a ruling.
+- **Readiness check at every completion.** When a task completes or a gate
+  opens, start every ready plan-marked parallel task; holding one back takes a
+  ledger line: `Parallel check: held <task> (<why>)`.

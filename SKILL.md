@@ -137,7 +137,8 @@ A `/foreman <skill>` one-shot, or any skill the user runs while the mode is
    first.
 2. **Split it** into pieces with clear boundaries. Pieces that don't depend on
    each other are spawned **in one message** so they run in parallel; serialize
-   only for a real dependency (one piece needs another's output).
+   only for a real dependency (one piece needs another's output). This holds
+   inside a called skill's controller loop too; see references/called-skills.md.
 3. **Spawn** one agent per piece with the fitting type:
 
    | Piece | Agent type |
