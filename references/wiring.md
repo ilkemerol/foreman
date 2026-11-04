@@ -31,7 +31,13 @@ the repo clone at `~/.claude/skills/foreman`. `~/.claude` stands for
   `~/.claude/settings.json` at the copy, directly or from their own status
   line script. It reads the flag and counts the board's stages in pure bash,
   renders the badge.
-- `~/.claude/settings.json` - holds no foreman hooks. `foreman-vision.sh`
+- `~/.claude/settings.json` - holds no foreman hooks. Worktree agents need
+  `"worktree": {"baseRef": "head"}` there (`INSTALL.md` step 7): the default
+  `fresh` branches from origin/<default-branch>, so a worktree agent misses
+  local commits. The setting is global: it also changes `claude --worktree`
+  and EnterWorktree. `foreman-state.sh on|task` warns when neither this file
+  nor the project's `.claude/settings.json` or `.claude/settings.local.json`
+  sets it to `head`. `foreman-vision.sh`
   only reads it, to find foreman-vision's repo from its installed
   `<repo>/hook/fv-hook.sh` hook. Without that hook it reads the root the
   foreman-vision plugin writes to `~/.claude/foreman-vision/plugin-root`,

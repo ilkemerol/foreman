@@ -167,8 +167,9 @@ A `/foreman <skill>` one-shot, or any skill the user runs while the mode is
      hunts; leave it unset otherwise; never `max` unless the user asks.
    - **Same file, two agents:** sequence them, or give each
      `isolation: "worktree"`. A worktree agent's changes live on its own
-     branch - land them by fast-forward or cherry-pick (never a merge commit)
-     before reporting done, and never
+     branch - land the commit the review passed (note its sha when
+     accepting; commits added since get reviewed first) by fast-forward or
+     cherry-pick (never a merge commit) before reporting done, and never
      discard a worktree that holds changes without the user's word.
 4. **Act on each status** that comes back. Any return other than `done`
    moves its row to `waiting` first, even when you answer at once.
@@ -209,7 +210,8 @@ A `/foreman <skill>` one-shot, or any skill the user runs while the mode is
 5. **Report** to the user. First, if two or more pieces changed files, check
    them together once the last one has landed, even if each passed alone: a
    later piece can undo an accepted one and both reports still read clean.
-   Read the task's combined diff, committed or not, confirm every accepted
+   Read the task's combined diff, committed or not, plus new untracked files
+   (`git status --untracked-files=all`), confirm every accepted
    piece's change is still there, and run the project's check once. A piece
    whose change is gone goes back to an agent. Then report the outcome first,
    anything that failed (with
@@ -247,9 +249,11 @@ foreman-vision cover the rest.
 
 **Reconcile** before reporting, and after a compaction, resume or user
 interrupt: every running, waiting or verifying row must match a live agent. `show` prints each
-agent's full id, so SendMessage can reach it even after a compaction. A row
-whose agent is gone or silent takes the failure path: check its worktree or
-diff, then SendMessage it or spawn a fresh one with a progress note.
+agent's full id, so SendMessage can reach it even after a compaction. Silent is
+not gone: first check the agent is still live (`show`, SendMessage). A row
+whose agent is gone takes the failure path: check its worktree or diff, then
+spawn a fresh one with a progress note, in the same isolation (worktree) as
+the one it replaces.
 A `done` row whose agent still has background work running is reconciled
 the same way: stop the work before the final report.
 

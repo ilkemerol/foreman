@@ -288,6 +288,27 @@ for i in 1 2 3 4 5 6 7 8 9 10; do flag spawned "p$i" Explore "job $i" running & 
 check "parallel hook spawns unique rows" "10 10" "$(cut -f1 "$b" | sort -u | wc -l | tr -d ' ') $(rows)"
 flag off
 
+# worktree.baseRef: on|task warn unless the user or project settings set "head"
+proj="$CLAUDE_CONFIG_DIR/proj"; mkdir -p "$proj/.claude"
+basewarn() { ( cd "$proj" && CLAUDE_CODE_SESSION_ID=$sid bash "$here/bin/foreman-state.sh" "$1" 2>&1 >/dev/null ); flag off; }
+bw='foreman-state: worktree.baseRef is not "head": worktree agents start from origin/<default-branch>; serialize or set it (references/wiring.md)'
+rm -f "$CLAUDE_CONFIG_DIR/settings.json"
+check "on warns without settings.json" "$bw" "$(basewarn on)"
+printf '{"statusLine":{"type":"command"}}' > "$CLAUDE_CONFIG_DIR/settings.json"
+check "task warns when baseRef missing" "$bw" "$(basewarn task)"
+printf '{"worktree": {"baseRef": "fresh"}}' > "$CLAUDE_CONFIG_DIR/settings.json"
+check "on warns when baseRef fresh" "$bw" "$(basewarn on)"
+printf '{"worktree": {"baseRef": "head"}}' > "$CLAUDE_CONFIG_DIR/settings.json"
+check "on quiet with user baseRef head" "" "$(basewarn on)"
+check "task quiet with user baseRef head" "" "$(basewarn task)"
+rm -f "$CLAUDE_CONFIG_DIR/settings.json"
+printf '{"worktree":{"baseRef":"head"}}' > "$proj/.claude/settings.json"
+check "on quiet with project baseRef head" "" "$(basewarn on)"
+rm -f "$proj/.claude/settings.json"
+printf '{\n  "worktree": {\n    "baseRef" : "head"\n  }\n}\n' > "$proj/.claude/settings.local.json"
+check "on quiet with project local baseRef head" "" "$(basewarn on)"
+rm -f "$proj/.claude/settings.local.json"
+
 # foreman-vision launcher: repo from the hook in settings.json; starts no server
 vis() { CLAUDE_CODE_SESSION_ID=$sid bash "$here/bin/foreman-vision.sh" "$@" 2>&1; }
 fvrepo="$CLAUDE_CONFIG_DIR/fv repo"; mkdir -p "$fvrepo"
@@ -399,7 +420,10 @@ has_rule "vision hide beside others" 'never offer `stop`' 'On yes run `hide`' 'r
 has_rule "vision show after start" 'once it succeeds run `show` too' 'unless it prints an error'
 has_rule "vision failed status" 'A failed `status`' 'pass its message on and ask nothing'
 has_rule "plan-marked parallel" 'Plan-marked parallel tasks run in parallel' 'each with `isolation: "worktree"`' 'land them one at a time' 'not a BASE..HEAD range'
-has_rule "parallel readiness check" 'Readiness check at every completion' '`Parallel check: held <task> (<why>)`'
+has_rule "A2 land reviewed sha" 'land the commit the review passed' 'commits added since get reviewed first'
+has_rule "A3 untracked in combined diff" '`git status --untracked-files=all`'
+has_rule "A4 silent is not gone" 'Silent is not gone' 'in the same isolation (worktree) as the one it replaces'
+has_rule "parallel readiness check"'Readiness check at every completion' '`Parallel check: held <task> (<why>)`'
 check "SKILL.md step 2 points to called-skills parallel" yes "$(tr -s '\r\n\t ' ' ' < "$here/SKILL.md" | grep -qF "This holds inside a called skill's controller loop too; see references/called-skills.md." && echo yes || echo no)"
 
 # Sections moved out of SKILL.md: the reference exists and SKILL.md points to it

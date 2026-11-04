@@ -52,7 +52,7 @@ Ask your agent:
 Install foreman by following https://raw.githubusercontent.com/ilkemerol/foreman/main/INSTALL.md
 ```
 
-[INSTALL.md](INSTALL.md) checks the tools, installs foreman the way you choose, sets up the status line, offers the optional plugins and runs the checks.
+[INSTALL.md](INSTALL.md) checks the tools, installs foreman the way you choose, sets up the status line, asks about the worktree base, offers the optional plugins and runs the checks.
 
 There are two ways to install foreman. Pick one: with both on one machine, both load as plugins and every hook runs twice. Paths here say `~/.claude`; foreman honors `CLAUDE_CONFIG_DIR` when it is set.
 
@@ -73,7 +73,17 @@ Update with `claude plugin update foreman@foreman`, then `/reload-plugins` or a 
 git clone https://github.com/ilkemerol/foreman.git ~/.claude/skills/foreman
 ```
 
-The clone carries the plugin manifest, so Claude Code loads it as the plugin `foreman@skills-dir`, hooks included; there is nothing to merge into `settings.json`. An older foreman clone merged its hooks into `settings.json`: remove those entries, or every hook runs twice. [INSTALL.md](INSTALL.md) step 4 has a `jq` command that does it. `claude plugin list` should show `foreman@skills-dir` enabled. Update with `git -C ~/.claude/skills/foreman pull --ff-only`, then restart.
+The clone carries the plugin manifest, so Claude Code loads it as the plugin `foreman@skills-dir`, hooks included; there is nothing to merge into `settings.json`. An older foreman clone merged its hooks into `settings.json`: remove those entries, or every hook runs twice. [INSTALL.md](INSTALL.md) step 4 has a `jq` command that does it.
+
+**Clone the whole repo to that path; do not copy parts of it.** foreman works only as the complete clone at `~/.claude/skills/foreman`. Copying only `SKILL.md` or some of the folders, cloning somewhere else and copying files over, or running `cp -r foreman/* ...` (the `*` skips the hidden `.claude-plugin/` folder) leaves foreman incomplete:
+
+- Without `.claude-plugin/plugin.json`, Claude Code does not load the folder as the plugin `foreman@skills-dir`, so none of foreman's hooks run. Without `hooks/hooks.json` the plugin loads with no hooks. `/foreman` still answers, but with no edit guard (`master-edit-guard`), no guard against nested spawns (`nested-agent-guard`), no board updates (`board-sync`), no agent contract (`subagent-contract`), and no status line copy or recovery after a compaction or resume (`session-start`).
+- Without `bin/`, there is no mode flag, no board, no status line badge and no foreman-vision launcher.
+- Without `references/`, the rule files `SKILL.md` tells the session to read are missing.
+
+`claude plugin list` must show `foreman@skills-dir` enabled. Update with `git -C ~/.claude/skills/foreman pull --ff-only`, then restart; never by copying files over the clone.
+
+**Both methods: worktree base.** foreman runs pieces that change the same file in their own git worktree. Claude Code branches those from `worktree.baseRef`, whose default `fresh` starts from `origin/<default-branch>`: such an agent misses your unpushed commits. Set `"worktree": {"baseRef": "head"}` in `~/.claude/settings.json`; a plugin cannot set it. The setting is global: it also changes `claude --worktree` and EnterWorktree in every project. [INSTALL.md](INSTALL.md) step 7 sets it after asking you; without it, `/foreman on` warns.
 
 [references/wiring.md](references/wiring.md) lists every piece of wiring.
 
@@ -168,7 +178,7 @@ printf '%s ' "$(printf '%s' "$input" | bash ~/.claude/foreman/foreman-statusline
   | Design an implementation plan | `Plan` |
   | Multi-step work, 3+ files, shell, tests, commits, research | `general-purpose` |
 
-- **Same file, two agents** - they run one after another, or each in its own git worktree, landed by fast-forward or cherry-pick.
+- **Same file, two agents** - they run one after another, or each in its own git worktree, landed by fast-forward or cherry-pick. A worktree starts from your local HEAD only with `worktree.baseRef` set to `head` (see [Install](#install)).
 - **Confirmations** - a push, a delete, an external send, or a commit no plan scheduled is confirmed with you first, one action at a time.
 
 ### Agent board

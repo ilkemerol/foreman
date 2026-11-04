@@ -18,7 +18,7 @@ Paths below say `~/.claude`. When `CLAUDE_CONFIG_DIR` is set, Claude Code and fo
 - Run the steps in order. Every step is safe to run again.
 - On any error, stop and report it to the user with the command's output. Do not work around it.
 - Back up `settings.json` before changing it (the steps below do), and never write a file `jq` could not parse. Write it in place (`cat "$s.tmp" > "$s"`, not `mv`), so a symlinked `settings.json` stays a symlink.
-- Ask the user before installing a plugin, before removing a foreman install, and before replacing a status line they already have.
+- Ask the user before installing a plugin, before removing a foreman install, before replacing a status line they already have, and before setting `worktree.baseRef`.
 - Run every command in bash. On Windows that is Git Bash, the shell Claude Code runs hooks in.
 - Do not start foreman yourself. The user turns it on.
 
@@ -152,7 +152,38 @@ printf '%s ' "$(printf '%s' "$input" | bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}
 
 If their own script still calls `~/.claude/skills/foreman/bin/foreman-statusline.sh`, ask them to change that path to `~/.claude/foreman/foreman-statusline.sh`.
 
-## 7. Optional plugins (ask first)
+## 7. Worktree base (ask first)
+
+foreman runs pieces that change the same file in their own git worktree (`isolation: "worktree"`). Claude Code branches each one from `worktree.baseRef`. The default, `fresh`, branches from `origin/<default-branch>`, so a worktree agent misses local commits that are not pushed. `head` branches from the local HEAD. A plugin cannot set this, so it goes into the user's `settings.json`; this is the same for both methods.
+
+The setting is global: it also changes `claude --worktree` and EnterWorktree, in every project.
+
+Read the current value:
+
+```sh
+c="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; s="$c/settings.json"
+if [ ! -f "$s" ]; then echo "baseRef: not set (no settings.json)"
+elif ! jq -e 'type == "object"' "$s" >/dev/null 2>&1; then echo "STOP: $s is not valid JSON"
+else echo "baseRef: $(jq -r '.worktree.baseRef? // "not set"' "$s")"
+fi
+```
+
+- `head` - change nothing.
+- `not set` - tell the user what the setting does and that it is global, then ask: "Set worktree.baseRef to head?" - "Yes, set it" / "No". On yes run the block below.
+- any other value, such as `fresh` - the user may have chosen it. Show it, tell them what `head` changes, and ask the same question. On yes run the block below.
+- `STOP` - tell the user their `settings.json` does not parse. Change nothing.
+
+On no, change nothing. foreman still works, but `/foreman on` warns each time that worktree agents start from `origin/<default-branch>`.
+
+```sh
+c="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; s="$c/settings.json"
+[ -f "$s" ] || echo '{}' > "$s"
+cp "$s" "$s.bak-foreman-$(date +%Y%m%d%H%M%S)-$$"
+jq '.worktree.baseRef = "head"' "$s" > "$s.tmp" &&
+  jq -e '.worktree.baseRef == "head"' "$s.tmp" >/dev/null && cat "$s.tmp" > "$s" && rm "$s.tmp"
+```
+
+## 8. Optional plugins (ask first)
 
 Neither plugin is required; foreman works without both. Ask the user about each one.
 
@@ -170,7 +201,7 @@ Neither plugin is required; foreman works without both. Ask the user about each 
   claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman
   ```
 
-## 8. Verify
+## 9. Verify
 
 foreman must be in the plugin list and enabled: `foreman@foreman` for the plugin, `foreman@skills-dir` for a repo clone.
 
@@ -193,13 +224,21 @@ bash "$p/eval/check.sh"
 
 The last line must read `foreman eval: <n> passed, 0 failed`. The checks run against a throwaway folder and change nothing real.
 
+Check the worktree base from step 7:
+
+```sh
+jq -r '.worktree.baseRef // empty' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
+```
+
+It must print `head`, unless the user said no in step 7.
+
 List the plugins that are enabled now:
 
 ```sh
 claude plugin list --json | jq -r '.[] | select(.enabled) | .id'
 ```
 
-## 9. Hand over
+## 10. Hand over
 
 Tell the user:
 
@@ -238,3 +277,5 @@ rm -rf "$c/foreman"
 ```
 
 `~/.claude/foreman` holds the flags, the boards, foreman-vision's log and the status line copy. If the user added the badge line to their own status line script, remove it there. Ask before uninstalling superpowers or caveman: other skills may use them.
+
+`worktree.baseRef` from step 7 is a general Claude Code setting, not foreman's, so it stays. Remove it only if the user asks: back up `settings.json`, then write the result of `jq 'del(.worktree.baseRef) | if .worktree == {} then del(.worktree) else . end'` in place, as above.

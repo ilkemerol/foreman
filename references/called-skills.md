@@ -32,7 +32,8 @@ order; this skill decides **who** does the work.
   plan marks tasks as parallel (a task map, a parallel group), dispatch the
   ready ones in one message, each with `isolation: "worktree"`; review each on
   its own branch range, then land them one at a time (fast-forward or
-  cherry-pick). The same tree is fine only when at most one of them changes
+  cherry-pick): land the commit the review passed; commits added since get
+  reviewed first. The same tree is fine only when at most one of them changes
   tracked code and runs the suite (the others write docs or outside the repo):
   each commits by explicit paths, and each review reads that task's own commits
   (`git show <sha>`), not a BASE..HEAD range. Serialize tasks that share a

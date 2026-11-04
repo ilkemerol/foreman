@@ -256,6 +256,15 @@ skill. Run each in a fresh session; FAIL conditions are the regressions to catch
     passed live); `foreman-state.sh on` printed no "not wired" warning with
     the hooks registered.
 
+- Worktree base (Claude Code 2.1.318, Windows, 2026-11-04): `worktree.baseRef`
+  defaults to `fresh`, which branches a worktree from
+  origin/<default-branch>; `head` branches from the local HEAD, and the setting
+  applies to `--worktree`, EnterWorktree and agent isolation. Live test in a
+  scratch repo on `feature/x` with one unpushed commit: with `fresh` an
+  `isolation: "worktree"` agent saw only origin/main (`60e1ff3`); with `head`
+  it saw the local commit (`e5da9fb`). Hence `foreman-state.sh on|task` warns
+  when no user or project settings file sets it to `head`.
+
 ## Open verification
 
 - Not verified here: the PostToolUse(Agent) `status` value for a foreground

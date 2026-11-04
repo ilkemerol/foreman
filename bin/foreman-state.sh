@@ -5,8 +5,8 @@
 # Read by bin/foreman-statusline.sh and this skill's hooks.
 #
 # Mode:   on | task | end | off | get
-#   on    session-wide mode
-#   task  one-shot run; never downgrades an existing "on"
+#   on    session-wide mode; warns on stderr if worktree.baseRef is not "head"
+#   task  one-shot run; never downgrades an existing "on"; warns like on
 #   end   end of a one-shot run; removes a "task" flag and its board
 #   off   remove the flag and the board
 #   get   print the current mode (on|task|off)
@@ -69,13 +69,20 @@ update() { # n column value [column value]
     mv "$b.tmp" "$b"
 }
 
+warn_base() { # user settings, then the project's (relative to the current dir)
+  # shortcut: any file setting head passes; precedence (a project "fresh" over a user "head") is not checked, upgrade if that bites.
+  grep -qs '"baseRef"[[:space:]]*:[[:space:]]*"head"' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json" \
+    .claude/settings.json .claude/settings.local.json ||
+    echo "foreman-state: worktree.baseRef is not \"head\": worktree agents start from origin/<default-branch>; serialize or set it (references/wiring.md)" >&2
+}
+
 id_row() { # print the row number holding agent id $1
   v=$(clean "$1") awk -F'\t' '$2 == ENVIRON["v"] { print $1; exit }' "$b" 2>/dev/null
 }
 
 case "${1:-get}" in
-  on)   printf on > "$f" ;;
-  task) [ "$cur" = on ] || printf task > "$f" ;;
+  on)   printf on > "$f"; warn_base ;;
+  task) [ "$cur" = on ] || printf task > "$f"; warn_base ;;
   end)  if [ "$cur" = task ]; then lock; rm -f "$f" "$b"; fi ;;
   off)  lock; rm -f "$f" "$b" ;;
   get)  case "$cur" in on|task) echo "$cur" ;; *) echo off ;; esac ;;
