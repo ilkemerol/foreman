@@ -65,7 +65,7 @@ claude plugin install foreman@foreman
 
 Inside a session the same is `/plugin marketplace add ilkemerol/foreman` and `/plugin install foreman@foreman`. Then restart Claude Code, or run `/reload-plugins`. The hooks come with the plugin and load with it; there is nothing to merge into `settings.json`.
 
-Update with `claude plugin update foreman@foreman`, then `/reload-plugins` or a restart. Third-party marketplaces do not update on their own by default; turn that on under `/plugin` > Marketplaces. Remove with `claude plugin uninstall foreman@foreman`.
+Update with `claude plugin update foreman@foreman`, then `/reload-plugins` or a restart. Third-party marketplaces do not update on their own by default; turn that on under `/plugin` > Marketplaces. Coming from a version before 2.2.0? Run [INSTALL.md](INSTALL.md) step 7 (worktree base). Remove with `claude plugin uninstall foreman@foreman`.
 
 **From the repo.** Clone it into your skills folder and keep it at this path:
 
@@ -81,7 +81,7 @@ The clone carries the plugin manifest, so Claude Code loads it as the plugin `fo
 - Without `bin/`, there is no mode flag, no board, no status line badge and no foreman-vision launcher.
 - Without `references/`, the rule files `SKILL.md` tells the session to read are missing.
 
-`claude plugin list` must show `foreman@skills-dir` enabled. Update with `git -C ~/.claude/skills/foreman pull --ff-only`, then restart; never by copying files over the clone.
+`claude plugin list` must show `foreman@skills-dir` enabled. Update with `git -C ~/.claude/skills/foreman pull --ff-only`, then restart; never by copying files over the clone. Coming from a version before 2.2.0? Run [INSTALL.md](INSTALL.md) step 7 (worktree base).
 
 **Both methods: worktree base.** foreman runs pieces that change the same file in their own git worktree. Claude Code branches those from `worktree.baseRef`, whose default `fresh` starts from `origin/<default-branch>`: such an agent misses your unpushed commits. Set `"worktree": {"baseRef": "head"}` in `~/.claude/settings.json`; a plugin cannot set it. The setting is global: it also changes `claude --worktree` and EnterWorktree in every project. [INSTALL.md](INSTALL.md) step 7 sets it after asking you; without it, `/foreman on` warns.
 

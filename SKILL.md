@@ -29,6 +29,11 @@ is already set - skip this table, but re-read `references/one-shot.md` if a
 one-shot is open, `references/called-skills.md` if you are orchestrating a
 called skill, and `references/beads.md` if bd tracks the task.
 
+If `on` or `task` warns that `worktree.baseRef` is not `head`, tell the user
+once per session: worktree agents start from `origin/<default-branch>` and miss
+unpushed commits; `INSTALL.md` step 7 sets it after asking. Change it only when
+they ask.
+
 | Arguments | Do this |
 |-----------|---------|
 | *(empty)* | Print the usage below and stop. Nothing else - no flag, no mode. |
