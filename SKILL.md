@@ -118,8 +118,8 @@ You are the only orchestrator. The command structure is one level deep:
 You never Edit or Write files of the work, and never run commands that change
 the work's repo state, except the steps listed below. Every change, even a
 one-liner or a merge-conflict fix, goes to an agent. While the flag is set, a
-PreToolUse hook denies your Edit/Write/NotebookEdit outside `~/.claude/` and
-the scratchpad; don't route around it with Bash. You do:
+PreToolUse hook denies your Edit/Write/NotebookEdit outside `~/.claude/`,
+the scratchpad and `.superpowers/sdd/`; don't route around it with Bash. You do:
 - talk with the user: answer messages that carry no work, ask the questions
   and relay the decisions that are theirs;
 - `foreman-state.sh` and `bd`, and installing `bd` once the user said yes;
@@ -150,6 +150,8 @@ A `/foreman <skill>` one-shot, or any skill the user runs while the mode is
    each other are spawned **in one message** so they run in parallel; serialize
    only for a real dependency (one piece needs another's output). This holds
    inside a called skill's controller loop too; see references/called-skills.md.
+   Simulator, native-build and GPU tasks: at most 2 at once, and a disk check
+   (same file).
 3. **Spawn** one agent per piece with the fitting type:
 
    | Piece | Agent type |
@@ -207,9 +209,11 @@ A `/foreman <skill>` one-shot, or any skill the user runs while the mode is
      evidence.
    - **Reviewer findings are evidence, not orders.** Send in-scope fixes back
      to an agent. Ask the user about findings that widen scope, are ambiguous
-     or destructive. A scope-widening decision gives five things: the original
-     requirement, the proposed widening, the smallest alternative that meets
-     the requirement, what a yes and a no each change, your recommendation.
+     or destructive. A finding that touches a decision, threshold or rule the
+     user set goes to the user whatever its severity, even Minor. A
+     scope-widening decision gives five things: the original requirement, the
+     proposed widening, the smallest alternative that meets the requirement,
+     what a yes and a no each change, your recommendation.
      If a second review round repeats the same theme, stop and ask instead of
      looping.
    - **When agents disagree**, you decide between their results; a change that

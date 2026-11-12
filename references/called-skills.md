@@ -25,7 +25,9 @@ order; this skill decides **who** does the work.
   for the standing rules: the contract hook covers its agents too, and defers
   to its own statuses. Map its statuses onto the board: `DONE` /
   `DONE_WITH_CONCERNS` = verifying (the concern as note) until its reviewers
-  pass, then done; `NEEDS_CONTEXT` = waiting (needs-info);
+  pass, then done, its reviewers too (a worktree task: when its commit lands,
+  below);
+  `NEEDS_CONTEXT` = waiting (needs-info);
   `BLOCKED` = waiting (blocked).
 - **Plan-marked parallel tasks run in parallel.** A called skill's "never run
   implementers in parallel" guards against file conflicts. When the approved
@@ -33,12 +35,19 @@ order; this skill decides **who** does the work.
   ready ones in one message, each with `isolation: "worktree"`; review each on
   its own branch range, then land them one at a time (fast-forward or
   cherry-pick): land the commit the review passed; commits added since get
-  reviewed first. The same tree is fine only when at most one of them changes
+  reviewed first. In the same Bash call as the land, close its board rows:
+  `foreman-state.sh set <agentId> done "<sha>"` for its implementer and each
+  reviewer. A resumed agent (fix round) reopens its row; close it again once
+  the re-review passes. The same tree is fine only when at most one of them changes
   tracked code and runs the suite (the others write docs or outside the repo):
   each commits by explicit paths, and each review reads that task's own commits
   (`git show <sha>`), not a BASE..HEAD range. Serialize tasks that share a
   file, an interface still being written, a user gate, or a port, simulator or
-  database. Ledger each such call as a ruling.
+  database. Tasks that boot a simulator or emulator, run a native or release
+  build, or use the GPU run at most 2 at a time unless the user says
+  otherwise; before dispatching one, check free disk (`df -h` on the work's
+  volume) and hold it while under 15 GB free
+  (`Parallel check: held <task> (<why>)`). Ledger each such call as a ruling.
 - **Readiness check at every completion.** When a task completes or a gate
   opens, start every ready plan-marked parallel task; holding one back takes a
   ledger line: `Parallel check: held <task> (<why>)`.

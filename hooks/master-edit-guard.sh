@@ -2,7 +2,8 @@
 # PreToolUse hook on Edit|Write|NotebookEdit (wired in hooks/hooks.json).
 # While foreman mode is on, the master does not edit the work's files: every
 # change goes to an agent. Still allowed for the master: the config dir
-# (memory, plans, skills) and the session scratchpad. Subagents (payload
+# (memory, plans, skills), the session scratchpad and a repo's .superpowers/sdd/
+# (the SDD controller's own ledger and briefs, not work files). Subagents (payload
 # agent_id set) are never blocked.
 # ponytail: Bash writes (sed, heredoc) pass unseen; matching Bash would run this
 # on every read-only command. Fails open on unreadable input.
@@ -23,7 +24,7 @@ command -v cygpath >/dev/null && dir=$(cygpath -m "$dir") && path=$(cygpath -m "
 lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }   # not ${x,,}: macOS ships bash 3.2
 dir=$(lc "$dir") path=$(lc "$path")
 case "$path" in
-  "$dir"/*|*/temp/claude/*|*/tmp/claude*) exit 0 ;;
+  "$dir"/*|*/temp/claude/*|*/tmp/claude*|*/.superpowers/sdd/*) exit 0 ;;
 esac
 
 reason="Foreman mode: the master does not edit work files. Hand this change to an agent (caveman:cavecrew-builder for 1-2 files, general-purpose otherwise). If the user wants you to edit directly, they run /foreman off."

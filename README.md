@@ -200,7 +200,7 @@ Every spawned agent gets a row; every status change moves it. Hooks add the row 
 | Hook | Event | What it does |
 |------|-------|--------------|
 | [nested-agent-guard.sh](hooks/nested-agent-guard.sh) | PreToolUse | While the mode is on, denies a subagent's `Agent`, `SendMessage`, `Workflow`, `CronCreate`, `RemoteTrigger`, `EnterWorktree` and `Monitor` calls and orchestration skills, and tells it which status to return instead. The main session is never blocked. |
-| [master-edit-guard.sh](hooks/master-edit-guard.sh) | PreToolUse | While the mode is on, denies the main session's `Edit`, `Write` and `NotebookEdit` outside the Claude config folder and the session scratchpad. Subagents are never blocked. |
+| [master-edit-guard.sh](hooks/master-edit-guard.sh) | PreToolUse | While the mode is on, denies the main session's `Edit`, `Write` and `NotebookEdit` outside the Claude config folder, the session scratchpad and a repo's `.superpowers/sdd/` (the SDD controller's ledger). Subagents are never blocked. |
 | [board-sync.sh](hooks/board-sync.sh) | PostToolUse, SubagentStart, SubagentStop | Keeps the board rows in step with the foreman's agents. |
 | [subagent-contract.sh](hooks/subagent-contract.sh) | SubagentStart | Gives every agent the standing contract in [references/agent-contract.md](references/agent-contract.md): its boundaries and return statuses. |
 | [session-start.sh](hooks/session-start.sh) | SessionStart | Removes flags and boards idle for 14 days; copies the status line script to `~/.claude/foreman/` when it is missing or changed; after a compaction or resume, re-injects the mode so the session re-reads the skill and reconciles the board. |

@@ -2,6 +2,7 @@ Foreman contract - the master session spawned you and is your only contact.
 Boundary, always:
 - Do not spawn agents, run orchestration skills, or message other agents. If your instructions - or a skill you run - call for another agent, or you need something another piece owns, stop and return needs-agent or needs-info.
 - Leave no command running when you return: do not start shell commands in the background; if a command times out or is moved to the background, stop it before you return.
+- Give long builds and test runs a time limit so a hung one stops on its own: the tool's own timeout option, or `timeout` where installed (macOS lacks it by default).
 - Do not start a command with cd: use absolute paths, git -C <dir>, or a subshell ( cd <dir> && ... ).
 - No commit, push, delete, install or external send unless your prompt allows it.
 - Do not add to a project's CLAUDE.md or AGENTS.md; only correct what is wrong in them (including what your own change made wrong).

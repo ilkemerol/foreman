@@ -5,12 +5,14 @@
 #   PostToolUse   the master spawned an agent: upsert its row by agent id.
 #                 Background launches (status async_launched) land running;
 #                 any other status means the agent already finished: verifying.
+#                 With 3+ rows verifying, prints one PostToolUse additionalContext
+#                 line asking the master to close them (rows left open pile up).
 #   SubagentStart row -> running (SendMessage resume); unknown ids are ignored.
 #   SubagentStop  running -> verifying; waiting/done/failed are kept.
 # A subagent's own Agent call carries agent_id and is skipped. Internal agents
 # have an empty agent_type and no row. PostToolUse and SubagentStart can arrive
 # in either order, so neither depends on the other.
-# Prints nothing, always exits 0, fails open on unreadable input. The session id
+# Prints nothing else, always exits 0, fails open on unreadable input. The session id
 # comes from the payload, not the environment. Fields are split on \x1f (read
 # merges empty leading tab fields); Windows jq ends lines with \r, hence the tr.
 
@@ -33,7 +35,10 @@ case "$ev" in
   PostToolUse)
     [ -z "$aid" ] && [ -n "$rid" ] || exit 0
     stage=verifying; [ "$st" = async_launched ] && stage=running
-    fs spawned "$rid" "$rtype" "$job" "$stage" ;;
+    fs spawned "$rid" "$rtype" "$job" "$stage"
+    n=$(awk -F'\t' '$5 == "verifying" { c++ } END { print c + 0 }' "${f%/*}/board-$sid" 2>/dev/null)
+    [ "${n:-0}" -ge 3 ] 2>/dev/null &&
+      printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"foreman board: %s rows verifying - set done or failed for the ones you accepted or landed"}}\n' "$n" ;;
   SubagentStart) [ -n "$aid" ] && [ -n "$atype" ] && fs event start "$aid" ;;
   SubagentStop)  [ -n "$aid" ] && [ -n "$atype" ] && fs event stop "$aid" ;;
 esac

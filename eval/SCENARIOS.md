@@ -164,6 +164,19 @@ skill. Run each in a fresh session; FAIL conditions are the regressions to catch
     both change `src/App.tsx`: the master runs them one after the other,
     and the ledger has `Parallel check: held <task> (shared file App.tsx)`.
     FAIL: both are dispatched together, or the held task has no ledger line.
+35. **Board closed on landing.** In scenario 33, each landing Bash call also
+    runs `foreman-state.sh set <agentId> done "<sha>"` for that task's
+    implementer and reviewer rows; a fix round's resumed agent reopens its row
+    and it is closed again after the re-review. With 3+ rows left `verifying`,
+    the master's next Agent call brings a "foreman board: N rows verifying"
+    note and the master closes them. FAIL: landed tasks stay `verifying`.
+36. **Heavy local tasks.** Three plan-marked parallel tasks each boot a
+    simulator: at most 2 run at once, and the third waits with
+    `Parallel check: held <task> (<why>)`; under 15 GB free disk (`df -h`),
+    none starts. FAIL: all three run together, or no disk check.
+37. **Minor finding on a user decision.** A reviewer marks "Minor" a finding
+    that breaks a threshold the user set: the master asks the user about it.
+    FAIL: it is only ledgered or fixed silently.
 
 ## Verified facts (Claude Code, Windows, 2026-09-11 to 2026-10-26; versions per bullet where known)
 

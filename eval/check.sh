@@ -202,6 +202,8 @@ check "master notebook denied" "deny" "$(medit 'C:\work\repo\nb.ipynb' NotebookE
 check "master config dir allowed" "" "$(medit "$cfgwin\projects\x\memory\m.md")"
 check "master scratchpad allowed" "" "$(medit 'C:\Users\U\AppData\Local\Temp\claude\abc\scratchpad\n.md' Write)"
 check "master pr-body.md in work tree denied" "deny" "$(medit 'C:\work\repo\dev-reports\plans\f\pr-body.md' Write)"
+check "master sdd workspace allowed" "" "$(medit 'C:\work\repo\.superpowers\sdd\x\progress.md' Write)"
+check "master .superpowers outside sdd denied" "deny" "$(medit 'C:\work\repo\.superpowers\other.md' Write)"
 check "subagent edit allowed" "" "$(medit 'C:\work\repo\src\a.ts' Edit a1)"
 check "edit guard bad input fails open" "" "$(printf 'not json' | bash "$here/hooks/master-edit-guard.sh")"
 flag task
@@ -259,6 +261,10 @@ t1=$(flag add Explore twin); t2=$(flag add Explore twin)
 sync "$(post a7 Explore twin)"
 check "spawn claims lowest of two queued twins" "a7 -" "$(rown "$t1" | cut -d'|' -f1) $(rown "$t2" | cut -d'|' -f1)"
 check "hook prints nothing" "" "$(sync "$(post a8 Plan quiet)"; sync "$(sa SubagentStart a8)"; sync "$(sa SubagentStop a8)")"
+nudge() { sync "$1" | jq -r '.hookSpecificOutput | .hookEventName + "|" + .additionalContext' 2>/dev/null | tr -d '\r'; }
+check "hook nudges at 3 verifying rows" "PostToolUse|foreman board: 3 rows verifying - set done or failed for the ones you accepted or landed" "$(nudge "$(post a10 Explore nudge)")"
+flag set a8 done
+check "hook quiet under 3 verifying rows" "" "$(sync "$(post a11 Explore calm)")"
 check "hook bad input fails open" "0:" "$(out=$(printf 'not json' | bash "$here/hooks/board-sync.sh"); echo "$?:$out")"
 flag off
 sync "$(post a9 Plan off)"
@@ -279,6 +285,7 @@ c=$(ctx "$(sa SubagentStart c1)")
 check "contract has needs-agent status" "yes" "$(has 'needs-agent:' "$c")"
 check "contract has no-cd rule" "yes" "$(has 'Do not start a command with cd' "$c")"
 check "contract has worktree rule" "yes" "$(has 'git worktree add/remove/prune' "$c")"
+check "contract has time-limit rule" "yes" "$(has 'Give long builds and test runs a time limit' "$c")"
 check "contract under 4000 chars" "yes" "$([ "${#c}" -gt 0 ] && [ "${#c}" -lt 4000 ] && echo yes || echo no)"
 check "contract bad input fails open" "0:" "$(out=$(printf 'not json' | bash "$here/hooks/subagent-contract.sh"); echo "$?:$out")"
 flag off
@@ -425,6 +432,10 @@ has_rule "A3 untracked in combined diff" '`git status --untracked-files=all`'
 has_rule "A4 silent is not gone" 'Silent is not gone' 'in the same isolation (worktree) as the one it replaces'
 has_rule "baseRef ask" 'warns that `worktree.baseRef` is not `head`, ask once per' 'Set `worktree.baseRef` to `head` in your settings.json?' 'step 7 of `${CLAUDE_SKILL_DIR}/INSTALL.md`' 'on `STOP` pass it on and change nothing' 'On no change nothing'
 has_rule "parallel readiness check" 'Readiness check at every completion' '`Parallel check: held <task> (<why>)`'
+has_rule "board closed on land" 'In the same Bash call as the land, close its board rows:' '`foreman-state.sh set <agentId> done "<sha>"` for its implementer and each reviewer' 'A resumed agent (fix round) reopens its row; close it again once the re-review passes'
+has_rule "heavy task limit" 'or use the GPU run at most 2 at a time unless the user says otherwise' "(\`df -h\` on the work's volume) and hold it while under 15 GB free"
+has_rule "user-decision finding" 'A finding that touches a decision, threshold or rule the user set goes to the user whatever its severity, even Minor.'
+check "SKILL.md step 2 points to heavy task limit" yes "$(tr -s '\r\n\t ' ' ' < "$here/SKILL.md" | grep -qF 'Simulator, native-build and GPU tasks: at most 2 at once' && echo yes || echo no)"
 check "SKILL.md step 2 points to called-skills parallel" yes "$(tr -s '\r\n\t ' ' ' < "$here/SKILL.md" | grep -qF "This holds inside a called skill's controller loop too; see references/called-skills.md." && echo yes || echo no)"
 
 # Sections moved out of SKILL.md: the reference exists and SKILL.md points to it
