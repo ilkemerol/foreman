@@ -50,7 +50,7 @@ case "${1:-status}" in
     if up; then echo "running $url"
     elif pid=$(listener); [ -n "$pid" ]; then
       echo "foreman-vision: port $port is held by pid $pid but foreman-vision does not answer" >&2; exit 1
-    else echo stopped; echo "foreman-vision: stopped (port $port free)" >&2; fi
+    else unport; echo stopped; echo "foreman-vision: stopped (port $port free)" >&2; fi
     ;;
   url) echo "$url" ;;
   start)

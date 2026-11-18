@@ -347,6 +347,8 @@ check "vision start needs a built UI" "foreman-vision: UI not built - run npm ru
 mkdir -p "$CLAUDE_CONFIG_DIR/foreman-vision"; printf '1\n' > "$CLAUDE_CONFIG_DIR/foreman-vision/port"
 check "vision stop when not running" "foreman-vision: not running" "$(vis stop)"
 check "vision stop removes its port file" "gone" "$([ -e "$CLAUDE_CONFIG_DIR/foreman-vision/port" ] && echo kept || echo gone)"
+printf '1\n' > "$CLAUDE_CONFIG_DIR/foreman-vision/port"; vis status >/dev/null
+check "vision status removes a stale port file" "gone" "$([ -e "$CLAUDE_CONFIG_DIR/foreman-vision/port" ] && echo kept || echo gone)"
 printf '4780\n' > "$CLAUDE_CONFIG_DIR/foreman-vision/port"; vis stop >/dev/null
 check "vision stop keeps another port's file" "4780" "$(cat "$CLAUDE_CONFIG_DIR/foreman-vision/port")"
 rm -f "$CLAUDE_CONFIG_DIR/foreman-vision/port"
