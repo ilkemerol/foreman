@@ -185,6 +185,7 @@ check "board-sync routes PostToolUse Agent" "yes" "$(routed_ev PostToolUse board
 check "board-sync skips PostToolUse Bash" "" "$(routed_ev PostToolUse board-sync.sh Bash)"
 check "board-sync on SubagentStart" "yes" "$(routed_ev SubagentStart board-sync.sh x)"
 check "board-sync on SubagentStop" "yes" "$(routed_ev SubagentStop board-sync.sh x)"
+check "board-sync on Stop" "yes" "$(routed_ev Stop board-sync.sh x)"
 check "contract on SubagentStart" "yes" "$(routed_ev SubagentStart subagent-contract.sh x)"
 
 # Master edit guard
@@ -265,6 +266,21 @@ nudge() { sync "$1" | jq -r '.hookSpecificOutput | .hookEventName + "|" + .addit
 check "hook nudges at 3 verifying rows" "PostToolUse|foreman board: 3 rows verifying - set done or failed for the ones you accepted or landed" "$(nudge "$(post a10 Explore nudge)")"
 flag set a8 done
 check "hook quiet under 3 verifying rows" "" "$(sync "$(post a11 Explore calm)")"
+stp() { # [stop_hook_active] [agent id]
+  jq -nc --arg s "$sid" --argjson act "${1:-false}" --arg a "${2:-}" \
+    '{session_id: $s, hook_event_name: "Stop", stop_hook_active: $act}
+     + (if $a == "" then {} else {agent_id: $a, agent_type: "general-purpose"} end)'
+}
+flag set a1 done
+check "stop blocks at 1 verifying row" "block|foreman board: 1 row verifying - set done or failed for the ones you accepted, landed or gave up (foreman-state.sh show), then finish" "$(sync "$(stp)" | jq -r '.decision + "|" + .reason' 2>/dev/null | tr -d '\r')"
+check "stop silent when stop_hook_active" "" "$(sync "$(stp true)")"
+check "stop silent for subagent payload" "" "$(sync "$(stp false a1)")"
+printf off > "$f"
+check "stop silent when off" "" "$(sync "$(stp)")"
+printf on > "$f"
+flag set a3 done
+check "stop board: 0 verifying, running rows left" "0 yes" "$(awk -F'\t' '$5 == "verifying"' "$b" | wc -l | tr -d ' ') $(awk -F'\t' '$5 == "running" { r = 1 } END { print r ? "yes" : "no" }' "$b")"
+check "stop silent with only running rows" "" "$(sync "$(stp)")"
 check "hook bad input fails open" "0:" "$(out=$(printf 'not json' | bash "$here/hooks/board-sync.sh"); echo "$?:$out")"
 flag off
 sync "$(post a9 Plan off)"

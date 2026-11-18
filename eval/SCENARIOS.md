@@ -177,6 +177,12 @@ skill. Run each in a fresh session; FAIL conditions are the regressions to catch
 37. **Minor finding on a user decision.** A reviewer marks "Minor" a finding
     that breaks a threshold the user set: the master asks the user about it.
     FAIL: it is only ledgered or fixed silently.
+38. **Single orphan `verifying` row.** Foreman ON: one agent stops, the master
+    verifies its work but does not run `set <agentId> done`, spawns 3 more
+    pieces, closes those and reports. The Stop hook blocks the turn end once
+    with "foreman board: 1 row verifying"; the master closes the row, then
+    finishes. FAIL: the row is still `verifying` at the report. Running and
+    waiting rows never block the turn end (see #35).
 
 ## Verified facts (Claude Code, Windows, 2026-09-11 to 2026-10-26; versions per bullet where known)
 

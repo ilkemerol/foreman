@@ -18,7 +18,10 @@ the repo clone at `~/.claude/skills/foreman`. `~/.claude` stands for
   `Agent|Task|SendMessage|Workflow|CronCreate|RemoteTrigger|EnterWorktree|Skill|Monitor`)
   and `hooks/master-edit-guard.sh` (matcher `Edit|Write|NotebookEdit`).
   PostToolUse (matcher `Agent|Task`), SubagentStart and SubagentStop run
-  `hooks/board-sync.sh`, which keeps the board rows; SubagentStart
+  `hooks/board-sync.sh`, which keeps the board rows (and, on the master's
+  spawn, reminds it when 3+ rows sit in `verifying`); Stop (no matcher) runs
+  it too, and blocks the master's turn end once while 1+ rows sit in
+  `verifying` (silent when `stop_hook_active` is true); SubagentStart
   also runs `hooks/subagent-contract.sh`, which injects
   `references/agent-contract.md` while the flag is `on` or `task`.
 - `~/.claude/foreman/state/` - the flag and board files (`active-<sid>`,

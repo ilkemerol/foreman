@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PostToolUse (matcher Agent), SubagentStart and SubagentStop hook. While
+# PostToolUse (matcher Agent), SubagentStart, SubagentStop and Stop hook. While
 # foreman mode is on for the session, keeps the agent board in step with the
 # master's agents through bin/foreman-state.sh (the board's only writer):
 #   PostToolUse   the master spawned an agent: upsert its row by agent id.
@@ -9,6 +9,10 @@
 #                 line asking the master to close them (rows left open pile up).
 #   SubagentStart row -> running (SendMessage resume); unknown ids are ignored.
 #   SubagentStop  running -> verifying; waiting/done/failed are kept.
+#   Stop          the master's turn ends with 1+ rows verifying: prints a block
+#                 decision that sends it back once to close them
+#                 (stop_hook_active true: silent, so no loop). Running and
+#                 waiting rows do not block: both are legit at turn end.
 # A subagent's own Agent call carries agent_id and is skipped. Internal agents
 # have an empty agent_type and no row. PostToolUse and SubagentStart can arrive
 # in either order, so neither depends on the other.
@@ -18,12 +22,13 @@
 
 here="$(cd "$(dirname "$0")/.." && pwd)"
 p=$(cat)
-IFS=$'\x1f' read -r ev sid aid atype rid rtype st job < <(printf '%s' "$p" | jq -r '[
+IFS=$'\x1f' read -r ev sid aid atype rid rtype st job again < <(printf '%s' "$p" | jq -r '[
   .hook_event_name // "", (.session_id // "" | gsub("[^a-zA-Z0-9-]"; "")), .agent_id // "", .agent_type // "",
   (.tool_response | if type == "object" then .agentId // "" else "" end),
   (.tool_input.subagent_type // .tool_response.agentType // "general-purpose"),
   (.tool_response | if type == "object" then .status // "" else "" end),
-  (.tool_input.description // "" | if . == "" then "-" else . end)
+  (.tool_input.description // "" | if . == "" then "-" else . end),
+  (.stop_hook_active == true)
   ] | map(tostring | gsub("[\r\n\u001f]"; " ")) | join("\u001f")' 2>/dev/null | tr -d '\r')
 [ -n "$sid" ] || exit 0
 f="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/foreman/state/active-$sid"
@@ -31,15 +36,21 @@ f="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/foreman/state/active-$sid"
 case "$(head -n1 "$f" 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z')" in on|task) ;; *) exit 0 ;; esac
 
 fs() { CLAUDE_CODE_SESSION_ID=$sid bash "$here/bin/foreman-state.sh" "$@" >/dev/null 2>&1; }
+nverifying() { awk -F'\t' '$5 == "verifying" { c++ } END { print c + 0 }' "${f%/*}/board-$sid" 2>/dev/null; }
 case "$ev" in
   PostToolUse)
     [ -z "$aid" ] && [ -n "$rid" ] || exit 0
     stage=verifying; [ "$st" = async_launched ] && stage=running
     fs spawned "$rid" "$rtype" "$job" "$stage"
-    n=$(awk -F'\t' '$5 == "verifying" { c++ } END { print c + 0 }' "${f%/*}/board-$sid" 2>/dev/null)
+    n=$(nverifying)
     [ "${n:-0}" -ge 3 ] 2>/dev/null &&
       printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"foreman board: %s rows verifying - set done or failed for the ones you accepted or landed"}}\n' "$n" ;;
   SubagentStart) [ -n "$aid" ] && [ -n "$atype" ] && fs event start "$aid" ;;
   SubagentStop)  [ -n "$aid" ] && [ -n "$atype" ] && fs event stop "$aid" ;;
+  Stop)
+    [ -z "$aid" ] && [ "$again" != true ] || exit 0
+    n=$(nverifying)
+    [ "${n:-0}" -ge 1 ] 2>/dev/null && { w=rows; [ "$n" = 1 ] && w=row
+      printf '{"decision":"block","reason":"foreman board: %s %s verifying - set done or failed for the ones you accepted, landed or gave up (foreman-state.sh show), then finish"}\n' "$n" "$w"; } ;;
 esac
 exit 0
